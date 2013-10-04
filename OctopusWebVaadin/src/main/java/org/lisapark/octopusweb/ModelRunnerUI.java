@@ -424,9 +424,7 @@ public class ModelRunnerUI extends UI {
 
     private void initModelList() {
         modelList.setContainerDataSource(modelContainer);
-        modelList.setVisibleColumns((Object[]) new String[]{MODEL_NAME
-//                , MODEL_JSON
-        });
+        modelList.setVisibleColumns((Object[]) new String[]{MODEL_NAME});
         modelList.setSelectable(true);
         modelList.setImmediate(true);
 
