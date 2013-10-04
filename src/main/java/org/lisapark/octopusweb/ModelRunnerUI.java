@@ -55,7 +55,8 @@ public class ModelRunnerUI extends UI {
     private TextField searchField = new TextField();
     private Button syncModelListButton = new Button("Sync");
     private Button runSelectedModelButton = new Button("Run Selected Model");
-    private FormLayout modelTreeLayout = new FormLayout();
+    private VerticalLayout modelTreeLayout = new VerticalLayout();
+    private FormLayout modelTreeFormLayout = new FormLayout();
     private VerticalLayout treeLayout = new VerticalLayout();
     private FieldGroup modelTreeFields = new FieldGroup();
     private static final String MODEL_NAME = "modelName";
@@ -70,7 +71,7 @@ public class ModelRunnerUI extends UI {
     
     private static final String PROCESSOR_NAME = "Group/Processor Name";
     private static final String PARAM_VALUE = "Param Value";
-    private static final String[] treeFieldNames = new String[]{PROCESSOR_NAME, PARAM_VALUE};
+//    private static final String[] treeFieldNames = new String[]{PROCESSOR_NAME, PARAM_VALUE};
     private static final String SOURCE_GROUP_NAME = "SOURCES: ";
     private static final String PROC_GROUP_NAME = "PROCESSORS: ";
     private static final String SINK_GROUP_NAME = "SINKS: ";
@@ -126,19 +127,25 @@ public class ModelRunnerUI extends UI {
 
     private void initTreeGrid() {
 
-        modelTreeLayout.addComponent(runSelectedModelButton);
+        modelTreeFormLayout.setMargin(true);
+        modelTreeFormLayout.setSizeFull();
+        
+        modelTreeFormLayout.addComponent(runSelectedModelButton);
 
         /* User interface can be created dynamically to reflect underlying data. */
         for (String fieldName : fieldNames) {
             TextField field = new TextField(fieldName);
-            modelTreeLayout.addComponent(field);
+            modelTreeFormLayout.addComponent(field);
             field.setWidth("100%");
 
             modelTreeFields.bind(field, fieldName);
         }
 
         modelTreeFields.setBuffered(false);
+        modelTreeLayout.addComponent(modelTreeFormLayout);
+        
         treeLayout.setSizeFull();
+//        treeLayout.setSpacing(true);
 
         treeTable.setTableFieldFactory(new TableFieldFactory() {
             @Override
@@ -169,6 +176,10 @@ public class ModelRunnerUI extends UI {
         generateModelTree(null);
 
         modelTreeLayout.addComponent(treeLayout);
+        
+        modelTreeLayout.setExpandRatio(modelTreeFormLayout, 1);
+        modelTreeLayout.setExpandRatio(treeLayout, 4);
+        modelTreeLayout.setSpacing(true);
     }
 
     private void generateModelTree(String json) {
