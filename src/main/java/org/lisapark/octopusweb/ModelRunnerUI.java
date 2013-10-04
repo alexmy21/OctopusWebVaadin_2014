@@ -63,15 +63,14 @@ public class ModelRunnerUI extends UI {
     private FieldGroup modelTreeFields = new FieldGroup();
     private static final String MODEL_NAME = "modelName";
     private static final String MODEL_JSON = "modelJson";
-    private static String JETTY_URL = "http://10.1.10.11:8084/search/search";
+    
     private static final String[] fieldNames = new String[]{MODEL_NAME, MODEL_JSON};
-    /*
-     * Any component can be bound to an external data sink. This example uses
-     * just a dummy in-memory list, but there are many more practical
-     * implementations.
-     */
+    
     IndexedContainer modelContainer = getModelDatasource();
     String modelJson = "";
+    
+    private static String JETTY_URL = "http://10.1.10.11:8084/search/search";
+    
     private static final String PROCESSOR_NAME = "Group/Processor Name";
     private static final String PARAM_VALUE = "Param Value";
     private static final String[] treeFieldNames = new String[]{PROCESSOR_NAME, PARAM_VALUE};
@@ -85,10 +84,6 @@ public class ModelRunnerUI extends UI {
     private static final String SINK = "SINK";
     private static final String UPDATE_BUTTON = "UPDATE";
 
-    /*
-     * After UI class is created, init() is executed. You should build and wire
-     * up your user interface here.
-     */
     @Override
     protected void init(VaadinRequest request) {
         initLayout();
@@ -98,10 +93,6 @@ public class ModelRunnerUI extends UI {
         initSyncRunButtons();
     }
 
-    /*
-     * In this example layouts are programmed in Java. You may choose use a
-     * visual editor, CSS or HTML templates for layout instead.
-     */
     private void initLayout() {
 
         /* Root of the user interface component tree is set */
@@ -123,18 +114,9 @@ public class ModelRunnerUI extends UI {
         /* Set the contents in the left of the split panel to use all the space */
         leftLayout.setSizeFull();
 
-        /*
-         * On the left side, expand the size of the contactList so that it uses
-         * all the space left after from topLeftLayout
-         */
         leftLayout.setExpandRatio(modelList, 1);
         modelList.setSizeFull();
 
-        /*
-         * In the topLeftLayout, searchField takes all the width there is
-         * after adding addNewContactButton. The height of the layout is defined
-         * by the tallest component.
-         */
         topLeftLayout.setWidth("100%");
         searchField.setWidth("100%");
         topLeftLayout.setExpandRatio(searchField, 1);
@@ -149,11 +131,6 @@ public class ModelRunnerUI extends UI {
 
         modelTreeLayout.addComponent(runSelectedModelButton);
 
-        ContainerHierarchicalWrapper containerHierarchicalWrapper = new ContainerHierarchicalWrapper(
-                new IndexedContainer());
-        HierarchicalContainerOrderedWrapper hc = new HierarchicalContainerOrderedWrapper(
-                containerHierarchicalWrapper);
-
         /* User interface can be created dynamically to reflect underlying data. */
         for (String fieldName : fieldNames) {
             TextField field = new TextField(fieldName);
@@ -163,16 +140,8 @@ public class ModelRunnerUI extends UI {
             modelTreeFields.bind(field, fieldName);
         }
 
-        /*
-         * Data can be buffered in the user interface. When doing so, commit()
-         * writes the changes to the data sink. Here we choose to write the
-         * changes automatically without calling commit().
-         */
         modelTreeFields.setBuffered(false);
-
         treeLayout.setSizeFull();
-
-        treeTable.setContainerDataSource(hc);
 
         treeTable.setTableFieldFactory(new TableFieldFactory() {
             @Override
@@ -203,34 +172,20 @@ public class ModelRunnerUI extends UI {
         generateModelTree(null);
 
         modelTreeLayout.addComponent(treeLayout);
-
     }
 
     private void generateModelTree(String json) {
 
-        System.out.println("Model JSON from generate tree: " + modelJson);
+        System.out.println("Model JSON from generated tree: " + modelJson);        
+        
+        ContainerHierarchicalWrapper containerHierarchicalWrapper = new ContainerHierarchicalWrapper(
+                new IndexedContainer());
+        HierarchicalContainerOrderedWrapper hc = new HierarchicalContainerOrderedWrapper(
+                containerHierarchicalWrapper);
 
-        Container.Hierarchical hc = treeTable.getContainerDataSource();
+        treeTable.setContainerDataSource(hc);
 
         addModelData(hc, json);
-
-//        treeTable.addGeneratedColumn(UPDATE_BUTTON, new ColumnGenerator() {
-//            @Override
-//            public Object generateCell(final Table source, final Object itemId, Object columnId) {
-//
-//                Button button = new Button("Delete");
-//
-//                button.addClickListener(new ClickListener() {
-//                    @Override
-//                    public void buttonClick(ClickEvent event) {
-//
-//                        source.getContainerDataSource().removeItem(itemId);
-//                    }
-//                });
-//
-//                return button;
-//            }
-//        });
 
         treeTable.setVisibleColumns((Object[]) new String[]{PROCESSOR_NAME, PARAM_VALUE, UPDATE_BUTTON});
 
@@ -241,43 +196,6 @@ public class ModelRunnerUI extends UI {
 
         treeTable.setSelectable(false);
         treeTable.setEditable(true);
-
-
-//        treeTable.addValueChangeListener(new Property.ValueChangeListener() {
-//            @Override
-//            public void valueChange(Property.ValueChangeEvent event) {
-//
-//                Object procId = treeTable.getValue();
-//
-//                if (procId == null) {
-//                    return;
-//                }
-//
-//                if (modelList.isSelected(procId)
-//                        && !treeTable.hasChildren(procId)) {
-//
-//                    String procType = (String) treeTable.getItem(procId)
-//                            .getItemProperty(PROC_TYPE).getValue();
-//                    String procName = (String) treeTable.getItem(procId)
-//                            .getItemProperty(PROC_NAME_VALUE).getValue();
-//                    String paramName = (String) treeTable.getItem(procId)
-//                            .getItemProperty(PROCESSOR_NAME).getValue();
-//                    String paramValue = (String) treeTable.getItem(procId)
-//                            .getItemProperty(PARAM_VALUE).getValue();
-//
-//                    modelJson = updateJson(procType, procName, paramName, paramValue);
-//
-//                    System.out.println("Updated Model JSON: " + procId + "; " + modelJson);
-//
-////                    generateModelTree(modelJson);
-//                } else {
-//                }
-//            }
-//
-//            private String updateJson(String procType, String procName, String paramName, String paramValue) {
-//                return modelJson;
-//            }
-//        });
 
         treeLayout.setExpandRatio(treeTable, 1);
 
@@ -296,34 +214,12 @@ public class ModelRunnerUI extends UI {
         }
 
         modelJsonData(hc, json);
-
     }
 
     private void initSearch() {
 
-        /*
-         * We want to show a subtle prompt in the search field. We could also
-         * set a caption that would be shown above the field or description to
-         * be shown in a tooltip.
-         */
         searchField.setInputPrompt("Search Model");
-
-        /*
-         * Granularity for sending events over the wire can be controlled. By
-         * default simple changes like writing a text in TextField are sent to
-         * server with the next Ajax call. You can set your component to be
-         * immediate to send the changes to server immediately after focus
-         * leaves the field. Here we choose to send the text over the wire as
-         * soon as user stops writing for a moment.
-         */
         searchField.setTextChangeEventMode(TextChangeEventMode.LAZY);
-
-        /*
-         * When the event happens, we handle it in the anonymous inner class.
-         * You may choose to use separate controllers (in MVC) or presenters (in
-         * MVP) instead. In the end, the preferred application architecture is
-         * up to you.
-         */
         searchField.addTextChangeListener(new TextChangeListener() {
             @Override
             public void textChange(final TextChangeEvent event) {
@@ -367,7 +263,8 @@ public class ModelRunnerUI extends UI {
                 hc.getItem(paramId).getItemProperty(PARAM_VALUE).setValue(convert2string(param.getValue()));
                 
                 hc.getItem(paramId).getItemProperty(UPDATE_BUTTON)
-                        .setValue(newButton(SOURCE, paramId, procName, param.getKey(), param.getValue()));
+                        .setValue(newButton(SOURCE, paramId, procName, param.getKey()));
+                
                 hc.getItem(paramId).getItemProperty(PROC_TYPE).setValue(SOURCE);
                 hc.getItem(paramId).getItemProperty(PROC_NAME_VALUE).setValue(procName);
                 hc.setParent(paramId, id);
@@ -378,7 +275,6 @@ public class ModelRunnerUI extends UI {
         }
 
         // Populate Processor's Group
-
         // Extract all Procs
         Set<String> procs = modelBean.getProcessors();
 
@@ -399,6 +295,10 @@ public class ModelRunnerUI extends UI {
                         .setValue(param.getKey());
                 hc.getItem(paramId).getItemProperty(PARAM_VALUE)
                         .setValue(convert2string(param.getValue()));
+                
+                hc.getItem(paramId).getItemProperty(UPDATE_BUTTON)
+                        .setValue(newButton(SOURCE, paramId, procName, param.getKey()));
+                
                 hc.getItem(paramId).getItemProperty(PROC_TYPE).setValue(PROCESSOR);
                 hc.getItem(paramId).getItemProperty(PROC_NAME_VALUE).setValue(procName);
                 hc.setParent(paramId, id);
@@ -409,7 +309,6 @@ public class ModelRunnerUI extends UI {
         }
 
         // Populate Sink's Group
-
         // Extract all Sinks
         Set<String> sinks = modelBean.getSinks();
 
@@ -428,6 +327,10 @@ public class ModelRunnerUI extends UI {
                 Object paramId = hc.addItem();
                 hc.getItem(paramId).getItemProperty(PROCESSOR_NAME).setValue(param.getKey());
                 hc.getItem(paramId).getItemProperty(PARAM_VALUE).setValue(convert2string(param.getValue()));
+                
+                hc.getItem(paramId).getItemProperty(UPDATE_BUTTON)
+                        .setValue(newButton(SOURCE, paramId, procName, param.getKey()));
+                
                 hc.getItem(paramId).getItemProperty(PROC_TYPE).setValue(SINK);
                 hc.getItem(paramId).getItemProperty(PROC_NAME_VALUE).setValue(procName);
                 hc.setParent(paramId, id);
@@ -449,7 +352,7 @@ public class ModelRunnerUI extends UI {
     }
 
     private Button newButton(final String procType, final Object procId, final String procName, 
-            final String paramKey, final Object paramValue) {
+            final String paramKey) {
         Button button = new Button();
         
         button.setCaption("update");
@@ -467,8 +370,7 @@ public class ModelRunnerUI extends UI {
                         + "; procName: " + procName 
                         + "; paramKey: " + paramKey 
                         + "; paramValue: " + paramValue);
-            }
-            
+            }            
         });
         
         return button;
@@ -522,7 +424,9 @@ public class ModelRunnerUI extends UI {
 
     private void initModelList() {
         modelList.setContainerDataSource(modelContainer);
-        modelList.setVisibleColumns((Object[]) new String[]{MODEL_NAME, MODEL_JSON});
+        modelList.setVisibleColumns((Object[]) new String[]{MODEL_NAME
+//                , MODEL_JSON
+        });
         modelList.setSelectable(true);
         modelList.setImmediate(true);
 
@@ -553,11 +457,6 @@ public class ModelRunnerUI extends UI {
         });
     }
 
-    /*
-     * Generate some in-memory example data to play with. In a real application
-     * we could be using SQLContainer, JPAContainer or some other to persist the
-     * data.
-     */
     private static IndexedContainer getModelDatasource() {
 
         IndexedContainer modelContainer = new IndexedContainer();
