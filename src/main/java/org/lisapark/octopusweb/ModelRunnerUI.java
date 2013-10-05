@@ -15,6 +15,7 @@ import com.vaadin.data.util.HierarchicalContainerOrderedWrapper;
 import com.vaadin.data.util.IndexedContainer;
 import com.vaadin.event.FieldEvents.TextChangeEvent;
 import com.vaadin.event.FieldEvents.TextChangeListener;
+import com.vaadin.server.Sizeable;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.ui.AbstractTextField.TextChangeEventMode;
 import com.vaadin.ui.Button;
@@ -101,6 +102,8 @@ public class ModelRunnerUI extends UI {
 
         /* Root of the user interface component tree is set */
         HorizontalSplitPanel splitPanel = new HorizontalSplitPanel();
+        splitPanel.setSplitPosition(30, Unit.PERCENTAGE);
+        
         setContent(splitPanel);
 
         /* Build the component tree */
