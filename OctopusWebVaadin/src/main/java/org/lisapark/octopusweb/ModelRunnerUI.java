@@ -1,6 +1,7 @@
 package org.lisapark.octopusweb;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -35,14 +36,19 @@ import com.vaadin.ui.VerticalLayout;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.protocol.HTTP;
 import org.lisapark.octopus.core.ModelBean;
 import org.lisapark.octopus.core.ProcessorBean;
 import org.lisapark.octopus.core.parameter.ConversionException;
@@ -74,7 +80,8 @@ public class ModelRunnerUI extends UI {
     
     private boolean isJsonDirty;
                 
-    private static String JETTY_URL = "http://10.1.10.11:8084/search/search";
+    private static String JETTY_SEARCH_URL = "http://10.1.10.11:8084/search/search";
+    private static String JETTY_RUN_URL = "http://10.1.10.11:8084/run/run";
     
     private static final String PROCESSOR_NAME = "Group/Processor Name";
     private static final String PARAM_VALUE = "Param Value";
@@ -138,6 +145,35 @@ public class ModelRunnerUI extends UI {
 
         modelTreeFormLayout.setMargin(true);
         modelTreeFormLayout.setSizeFull();
+        
+        runSelectedModelButton.addClickListener(new ClickListener() {
+
+            @Override
+            public void buttonClick(ClickEvent event) {
+                
+                ModelBean modelBean = new Gson().fromJson(modelJson, ModelBean.class);
+                try {
+                    HttpClient client = new DefaultHttpClient();
+                    HttpPost httpPost = new HttpPost(JETTY_RUN_URL);
+                    
+                    httpPost.setHeader("id", modelBean.getModelName());
+                    httpPost.setHeader("name", modelBean.getModelName());
+                    
+                    httpPost.setHeader("Content-Type", "application/json");
+                    StringEntity entity = new StringEntity(modelJson, HTTP.UTF_8);
+                    httpPost.setEntity(entity);
+
+                    HttpResponse httpResponse = client.execute(httpPost);
+                    
+                    System.out.println("HTTP response: " + httpResponse);
+                    
+                } catch (UnsupportedEncodingException ex) {
+                    Exceptions.printStackTrace(ex);
+                } catch (IOException ex) {
+                    Exceptions.printStackTrace(ex);
+                } 
+            }
+        });
         
         modelTreeFormLayout.addComponent(runSelectedModelButton);
 
@@ -280,7 +316,7 @@ public class ModelRunnerUI extends UI {
                 hc.getItem(paramId).getItemProperty(PARAM_VALUE).setValue(convert2string(param.getValue()));
                 
                 hc.getItem(paramId).getItemProperty(UPDATE_BUTTON)
-                        .setValue(newButton(SOURCE, paramId, procName, param.getKey()));
+                        .setValue(createUpdateButton(SOURCE, paramId, procName, param.getKey()));
                 
                 hc.getItem(paramId).getItemProperty(PROC_TYPE).setValue(SOURCE);
                 hc.getItem(paramId).getItemProperty(PROC_NAME_VALUE).setValue(procName);
@@ -314,7 +350,7 @@ public class ModelRunnerUI extends UI {
                         .setValue(convert2string(param.getValue()));
                 
                 hc.getItem(paramId).getItemProperty(UPDATE_BUTTON)
-                        .setValue(newButton(SOURCE, paramId, procName, param.getKey()));
+                        .setValue(createUpdateButton(SOURCE, paramId, procName, param.getKey()));
                 
                 hc.getItem(paramId).getItemProperty(PROC_TYPE).setValue(PROCESSOR);
                 hc.getItem(paramId).getItemProperty(PROC_NAME_VALUE).setValue(procName);
@@ -346,7 +382,7 @@ public class ModelRunnerUI extends UI {
                 hc.getItem(paramId).getItemProperty(PARAM_VALUE).setValue(convert2string(param.getValue()));
                 
                 hc.getItem(paramId).getItemProperty(UPDATE_BUTTON)
-                        .setValue(newButton(SOURCE, paramId, procName, param.getKey()));
+                        .setValue(createUpdateButton(SOURCE, paramId, procName, param.getKey()));
                 
                 hc.getItem(paramId).getItemProperty(PROC_TYPE).setValue(SINK);
                 hc.getItem(paramId).getItemProperty(PROC_NAME_VALUE).setValue(procName);
@@ -370,7 +406,7 @@ public class ModelRunnerUI extends UI {
         return retString;
     }
 
-    private Button newButton(final String procType, final Object procId, final String procName, 
+    private Button createUpdateButton(final String procType, final Object procId, final String procName, 
             final String paramKey) {
         Button button = new Button();
         
@@ -394,13 +430,13 @@ public class ModelRunnerUI extends UI {
                 ModelBean modelBean = new Gson().fromJson(modelJson, ModelBean.class);
                 if(SOURCE.equalsIgnoreCase(procType)){
                     Set<String> sources = modelBean.getSources();
-                    updateParams(sources, procName, paramValue);
+                    modelBean.setSources(updateParams(sources, procName, paramValue));
                 } else if(SINK.equalsIgnoreCase(procType)){
                     Set<String> sinks = modelBean.getSinks();
-                    updateParams(sinks, procName, paramValue);
+                    modelBean.setSources(updateParams(sinks, procName, paramValue));
                 } else {
                     Set<String> procs = modelBean.getProcessors();
-                    updateParams(procs, procName, paramValue);
+                    modelBean.setSources(updateParams(procs, procName, paramValue));
                 }
                 
                 modelJson = new Gson().toJson(modelBean, ModelBean.class);
@@ -408,16 +444,20 @@ public class ModelRunnerUI extends UI {
                 System.out.println("Updated modelJson: " + modelJson);
             }            
 
-            public void updateParams(Set<String> procs, String procName, String paramValue) throws JsonSyntaxException {
+            public Set<String> updateParams(Set<String> procs, String procName, String paramValue) throws JsonSyntaxException {
+                Set<String> newProcs = Sets.newHashSet();
                 for(String proc : procs){
                     ProcessorBean procBean = new Gson().fromJson(proc, ProcessorBean.class);
                     if(procBean.getName().equalsIgnoreCase(procName)){
                         procBean.getParams().put(paramKey, paramValue);                        
                         String procJson = new Gson().toJson(procBean, ProcessorBean.class);
-                        procs.add(procJson);
-                        break;
+                        newProcs.add(procJson);
+                    } else {
+                        newProcs.add(proc);
                     }
                 }
+                
+                return newProcs;
             }
         });
         
@@ -517,7 +557,7 @@ public class ModelRunnerUI extends UI {
         try {
             HttpClient client = new DefaultHttpClient();
 
-            HttpGet request = new HttpGet(JETTY_URL);
+            HttpGet request = new HttpGet(JETTY_SEARCH_URL);
             HttpResponse response = client.execute(request);
 
             // Get the response
