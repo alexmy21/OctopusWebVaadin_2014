@@ -394,13 +394,13 @@ public class ModelRunnerUI extends UI {
                 ModelBean modelBean = new Gson().fromJson(modelJson, ModelBean.class);
                 if(SOURCE.equalsIgnoreCase(procType)){
                     Set<String> sources = modelBean.getSources();
-                    updateParams(sources, paramValue);
+                    updateParams(sources, procName, paramValue);
                 } else if(SINK.equalsIgnoreCase(procType)){
                     Set<String> sinks = modelBean.getSinks();
-                    updateParams(sinks, paramValue);
+                    updateParams(sinks, procName, paramValue);
                 } else {
                     Set<String> procs = modelBean.getProcessors();
-                    updateParams(procs, paramValue);
+                    updateParams(procs, procName, paramValue);
                 }
                 
                 modelJson = new Gson().toJson(modelBean, ModelBean.class);
@@ -408,10 +408,15 @@ public class ModelRunnerUI extends UI {
                 System.out.println("Updated modelJson: " + modelJson);
             }            
 
-            public void updateParams(Set<String> sources, String paramValue) throws JsonSyntaxException {
-                for(String proc : sources){
+            public void updateParams(Set<String> procs, String procName, String paramValue) throws JsonSyntaxException {
+                for(String proc : procs){
                     ProcessorBean procBean = new Gson().fromJson(proc, ProcessorBean.class);
-                    procBean.getParams().put(paramKey, paramValue);
+                    if(procBean.getName().equalsIgnoreCase(procName)){
+                        procBean.getParams().put(paramKey, paramValue);                        
+                        String procJson = new Gson().toJson(procBean, ProcessorBean.class);
+                        procs.add(procJson);
+                        break;
+                    }
                 }
             }
         });
