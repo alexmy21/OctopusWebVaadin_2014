@@ -416,6 +416,7 @@ public class ModelRunnerUI extends UI {
                 modelContainer.removeAllItems();
                 modelContainer = getModelDatasource();
                 modelList.setContainerDataSource(modelContainer);
+                modelList.setVisibleColumns((Object[]) new String[]{MODEL_NAME});
 
                 modelContainer.removeAllContainerFilters();
             }
