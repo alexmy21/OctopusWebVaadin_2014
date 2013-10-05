@@ -2,6 +2,7 @@ package org.lisapark.octopusweb;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 import com.vaadin.annotations.Theme;
 import com.vaadin.data.Container;
@@ -43,6 +44,9 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.lisapark.octopus.core.ModelBean;
 import org.lisapark.octopus.core.ProcessorBean;
+import org.lisapark.octopus.core.parameter.ConversionException;
+import org.lisapark.octopus.core.parameter.Parameter;
+import org.lisapark.octopus.core.source.external.ExternalSource;
 import org.openide.util.Exceptions;
 
 @Theme("mytheme")
@@ -67,6 +71,8 @@ public class ModelRunnerUI extends UI {
     IndexedContainer modelContainer = getModelDatasource();
     String modelJson = "";
     
+    private boolean isJsonDirty;
+                
     private static String JETTY_URL = "http://10.1.10.11:8084/search/search";
     
     private static final String PROCESSOR_NAME = "Group/Processor Name";
@@ -249,7 +255,7 @@ public class ModelRunnerUI extends UI {
 
         ModelBean modelBean = new Gson().fromJson(json, ModelBean.class);
 
-        // Extract all sources
+        // Extract all sinks
         Set<String> sources = modelBean.getSources();
 
         // Populate Source Group
@@ -352,8 +358,10 @@ public class ModelRunnerUI extends UI {
     private String convert2string(Object value) {
         String retString = "";
 
-        if (value != null && value instanceof String) {
+        if (value != null && !(value instanceof String)) {
             retString = value.toString();
+        } else {
+            retString = (String) value;
         }
 
         return retString;
@@ -378,7 +386,31 @@ public class ModelRunnerUI extends UI {
                         + "; procName: " + procName 
                         + "; paramKey: " + paramKey 
                         + "; paramValue: " + paramValue);
+                
+                isJsonDirty = true;
+                ModelBean modelBean = new Gson().fromJson(modelJson, ModelBean.class);
+                if(SOURCE.equalsIgnoreCase(procType)){
+                    Set<String> sources = modelBean.getSources();
+                    updateParams(sources, paramValue);
+                } else if(SINK.equalsIgnoreCase(procType)){
+                    Set<String> sinks = modelBean.getSinks();
+                    updateParams(sinks, paramValue);
+                } else {
+                    Set<String> procs = modelBean.getProcessors();
+                    updateParams(procs, paramValue);
+                }
+                
+                modelJson = new Gson().toJson(modelBean, ModelBean.class);
+                
+                System.out.println("Updated modelJson: " + modelJson);
             }            
+
+            public void updateParams(Set<String> sources, String paramValue) throws JsonSyntaxException {
+                for(String proc : sources){
+                    ProcessorBean procBean = new Gson().fromJson(proc, ProcessorBean.class);
+                    procBean.getParams().put(paramKey, paramValue);
+                }
+            }
         });
         
         return button;
@@ -457,6 +489,8 @@ public class ModelRunnerUI extends UI {
                     System.out.println("Model JSON: " + modelJson);
 
                     generateModelTree(modelJson);
+                    
+                    isJsonDirty = false;
                 }
 
                 modelTreeLayout.setVisible(modelId != null);
