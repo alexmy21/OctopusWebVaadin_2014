@@ -49,6 +49,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.HTTP;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.lisapark.octopus.core.ModelBean;
 import org.lisapark.octopus.core.ProcessorBean;
 import org.lisapark.octopus.core.parameter.ConversionException;
@@ -70,19 +72,14 @@ public class ModelRunnerUI extends UI {
     private FormLayout modelTreeFormLayout = new FormLayout();
     private VerticalLayout treeLayout = new VerticalLayout();
     private FieldGroup modelTreeFields = new FieldGroup();
-    private static final String MODEL_NAME = "modelName";
-    private static final String MODEL_JSON = "modelJson";
-    
+    private static final String MODEL_NAME = "modelname";
+    private static final String MODEL_JSON = "modeljson";
     private static final String[] fieldNames = new String[]{MODEL_NAME, MODEL_JSON};
-    
     IndexedContainer modelContainer = getModelDatasource();
     String modelJson = "";
-    
     private boolean isJsonDirty;
-                
     private static String JETTY_SEARCH_URL = "http://10.1.10.11:8084/search/search";
-    private static String JETTY_RUN_URL = "http://10.1.10.11:8084/run/run";
-    
+    private static String JETTY_RUN_URL = "http://10.1.10.11:8084/run";
     private static final String PROCESSOR_NAME = "Group/Processor Name";
     private static final String PARAM_VALUE = "Param Value";
 //    private static final String[] treeFieldNames = new String[]{PROCESSOR_NAME, PARAM_VALUE};
@@ -110,7 +107,7 @@ public class ModelRunnerUI extends UI {
         /* Root of the user interface component tree is set */
         HorizontalSplitPanel splitPanel = new HorizontalSplitPanel();
         splitPanel.setSplitPosition(30, Unit.PERCENTAGE);
-        
+
         setContent(splitPanel);
 
         /* Build the component tree */
@@ -145,36 +142,41 @@ public class ModelRunnerUI extends UI {
 
         modelTreeFormLayout.setMargin(true);
         modelTreeFormLayout.setSizeFull();
-        
-        runSelectedModelButton.addClickListener(new ClickListener() {
 
+        runSelectedModelButton.addClickListener(new ClickListener() {
             @Override
             public void buttonClick(ClickEvent event) {
-                
+
                 ModelBean modelBean = new Gson().fromJson(modelJson, ModelBean.class);
                 try {
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put(MODEL_NAME, modelBean.getModelName());
+                    jsonObject.put(MODEL_JSON, modelJson);
+
                     HttpClient client = new DefaultHttpClient();
                     HttpPost httpPost = new HttpPost(JETTY_RUN_URL);
-                    
+
                     httpPost.setHeader("id", modelBean.getModelName());
                     httpPost.setHeader("name", modelBean.getModelName());
-                    
+
                     httpPost.setHeader("Content-Type", "application/json");
-                    StringEntity entity = new StringEntity(modelJson, HTTP.UTF_8);
+                    StringEntity entity = new StringEntity(jsonObject.toString(), HTTP.UTF_8);
                     httpPost.setEntity(entity);
 
                     HttpResponse httpResponse = client.execute(httpPost);
-                    
+
                     System.out.println("HTTP response: " + httpResponse);
-                    
+
                 } catch (UnsupportedEncodingException ex) {
                     Exceptions.printStackTrace(ex);
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
-                } 
+                } catch (JSONException ex) {
+                    Exceptions.printStackTrace(ex);
+                }
             }
         });
-        
+
         modelTreeFormLayout.addComponent(runSelectedModelButton);
 
         /* User interface can be created dynamically to reflect underlying data. */
@@ -188,7 +190,7 @@ public class ModelRunnerUI extends UI {
 
         modelTreeFields.setBuffered(false);
         modelTreeLayout.addComponent(modelTreeFormLayout);
-        
+
         treeLayout.setSizeFull();
 //        treeLayout.setSpacing(true);
 
@@ -221,7 +223,7 @@ public class ModelRunnerUI extends UI {
         generateModelTree(null);
 
         modelTreeLayout.addComponent(treeLayout);
-        
+
         modelTreeLayout.setExpandRatio(modelTreeFormLayout, 1);
         modelTreeLayout.setExpandRatio(treeLayout, 4);
         modelTreeLayout.setSpacing(true);
@@ -229,8 +231,8 @@ public class ModelRunnerUI extends UI {
 
     private void generateModelTree(String json) {
 
-        System.out.println("Model JSON from generated tree: " + modelJson);        
-        
+        System.out.println("Model JSON from generated tree: " + modelJson);
+
         ContainerHierarchicalWrapper containerHierarchicalWrapper = new ContainerHierarchicalWrapper(
                 new IndexedContainer());
         HierarchicalContainerOrderedWrapper hc = new HierarchicalContainerOrderedWrapper(
@@ -314,10 +316,10 @@ public class ModelRunnerUI extends UI {
                 Object paramId = hc.addItem();
                 hc.getItem(paramId).getItemProperty(PROCESSOR_NAME).setValue(param.getKey());
                 hc.getItem(paramId).getItemProperty(PARAM_VALUE).setValue(convert2string(param.getValue()));
-                
+
                 hc.getItem(paramId).getItemProperty(UPDATE_BUTTON)
                         .setValue(createUpdateButton(SOURCE, paramId, procName, param.getKey()));
-                
+
                 hc.getItem(paramId).getItemProperty(PROC_TYPE).setValue(SOURCE);
                 hc.getItem(paramId).getItemProperty(PROC_NAME_VALUE).setValue(procName);
                 hc.setParent(paramId, id);
@@ -348,10 +350,10 @@ public class ModelRunnerUI extends UI {
                         .setValue(param.getKey());
                 hc.getItem(paramId).getItemProperty(PARAM_VALUE)
                         .setValue(convert2string(param.getValue()));
-                
+
                 hc.getItem(paramId).getItemProperty(UPDATE_BUTTON)
                         .setValue(createUpdateButton(SOURCE, paramId, procName, param.getKey()));
-                
+
                 hc.getItem(paramId).getItemProperty(PROC_TYPE).setValue(PROCESSOR);
                 hc.getItem(paramId).getItemProperty(PROC_NAME_VALUE).setValue(procName);
                 hc.setParent(paramId, id);
@@ -380,10 +382,10 @@ public class ModelRunnerUI extends UI {
                 Object paramId = hc.addItem();
                 hc.getItem(paramId).getItemProperty(PROCESSOR_NAME).setValue(param.getKey());
                 hc.getItem(paramId).getItemProperty(PARAM_VALUE).setValue(convert2string(param.getValue()));
-                
+
                 hc.getItem(paramId).getItemProperty(UPDATE_BUTTON)
                         .setValue(createUpdateButton(SOURCE, paramId, procName, param.getKey()));
-                
+
                 hc.getItem(paramId).getItemProperty(PROC_TYPE).setValue(SINK);
                 hc.getItem(paramId).getItemProperty(PROC_NAME_VALUE).setValue(procName);
                 hc.setParent(paramId, id);
@@ -406,61 +408,60 @@ public class ModelRunnerUI extends UI {
         return retString;
     }
 
-    private Button createUpdateButton(final String procType, final Object procId, final String procName, 
+    private Button createUpdateButton(final String procType, final Object procId, final String procName,
             final String paramKey) {
         Button button = new Button();
-        
+
         button.setCaption("update");
         button.setImmediate(true);
         button.setStyleName("reindeer");
-        
-        button.addClickListener(new ClickListener(){
-            
+
+        button.addClickListener(new ClickListener() {
             @Override
             public void buttonClick(ClickEvent event) {
                 String paramValue = (String) treeTable.getItem(procId)
-                            .getItemProperty(PARAM_VALUE).getValue();
-                System.out.println("Button clicked: " + procType 
-                        + "; procId: " + procId 
-                        + "; procName: " + procName 
-                        + "; paramKey: " + paramKey 
+                        .getItemProperty(PARAM_VALUE).getValue();
+                System.out.println("Button clicked: " + procType
+                        + "; procId: " + procId
+                        + "; procName: " + procName
+                        + "; paramKey: " + paramKey
                         + "; paramValue: " + paramValue);
-                
+
                 isJsonDirty = true;
                 ModelBean modelBean = new Gson().fromJson(modelJson, ModelBean.class);
-                if(SOURCE.equalsIgnoreCase(procType)){
+                if (SOURCE.equalsIgnoreCase(procType)) {
                     Set<String> sources = modelBean.getSources();
                     modelBean.setSources(updateParams(sources, procName, paramValue));
-                } else if(SINK.equalsIgnoreCase(procType)){
+                } else if (SINK.equalsIgnoreCase(procType)) {
                     Set<String> sinks = modelBean.getSinks();
                     modelBean.setSources(updateParams(sinks, procName, paramValue));
                 } else {
                     Set<String> procs = modelBean.getProcessors();
                     modelBean.setSources(updateParams(procs, procName, paramValue));
                 }
-                
+
                 modelJson = new Gson().toJson(modelBean, ModelBean.class);
-                
+
                 System.out.println("Updated modelJson: " + modelJson);
-            }            
+            }
 
             public Set<String> updateParams(Set<String> procs, String procName, String paramValue) throws JsonSyntaxException {
                 Set<String> newProcs = Sets.newHashSet();
-                for(String proc : procs){
+                for (String proc : procs) {
                     ProcessorBean procBean = new Gson().fromJson(proc, ProcessorBean.class);
-                    if(procBean.getName().equalsIgnoreCase(procName)){
-                        procBean.getParams().put(paramKey, paramValue);                        
+                    if (procBean.getName().equalsIgnoreCase(procName)) {
+                        procBean.getParams().put(paramKey, paramValue);
                         String procJson = new Gson().toJson(procBean, ProcessorBean.class);
                         newProcs.add(procJson);
                     } else {
                         newProcs.add(proc);
                     }
                 }
-                
+
                 return newProcs;
             }
         });
-        
+
         return button;
     }
 
@@ -537,7 +538,7 @@ public class ModelRunnerUI extends UI {
                     System.out.println("Model JSON: " + modelJson);
 
                     generateModelTree(modelJson);
-                    
+
                     isJsonDirty = false;
                 }
 
