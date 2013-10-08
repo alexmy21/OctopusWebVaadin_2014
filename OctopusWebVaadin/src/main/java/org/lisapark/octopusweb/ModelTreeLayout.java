@@ -16,6 +16,7 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.Field;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.NativeButton;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.TableFieldFactory;
 import com.vaadin.ui.TextField;
@@ -310,7 +311,12 @@ public class ModelTreeLayout extends VerticalLayout {
 
         }
         
-        hc.getItem(procGroupId).getItemProperty(PROCESSOR_NAME).setValue(MRUI.PROC_GROUP_NAME);
+        if(procs.isEmpty()){
+            hc.getItem(procGroupId).getItemProperty(PARAM_VALUE).setReadOnly(true);
+            hc.setChildrenAllowed(procGroupId, false);
+        } 
+            
+        hc.getItem(procGroupId).getItemProperty(PROCESSOR_NAME).setValue(MRUI.PROC_GROUP_NAME);        
 
         // Populate Sink's Group
         // Extract all Sinks
@@ -371,7 +377,7 @@ public class ModelTreeLayout extends VerticalLayout {
     private Button updateButton(final String procType, final Object procId, final String procName,
             final String paramKey) {
 
-        Button button = new Button();
+        Button button = new NativeButton();
 
         button.setCaption("update");
         button.setImmediate(true);
