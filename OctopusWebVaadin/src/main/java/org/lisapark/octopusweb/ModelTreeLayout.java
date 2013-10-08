@@ -55,6 +55,7 @@ public class ModelTreeLayout extends VerticalLayout {
     // Non public constructor
     //==========================================================================
     ModelTreeLayout() {
+        
         super();
 
         runButton = new Button("run selected model");
@@ -222,8 +223,6 @@ public class ModelTreeLayout extends VerticalLayout {
      */
     private void createModelTree(Container.Hierarchical hc, String json) {
 
-        System.out.println("createModelTree");
-
         ModelBean modelBean = new Gson().fromJson(json, ModelBean.class);
 
         // Extract all sinks
@@ -262,9 +261,10 @@ public class ModelTreeLayout extends VerticalLayout {
                     hc.setChildrenAllowed(paramId, false);
                 }
             }
+            
             hc.setParent(id, sourceGroupId);
-
         }
+        
         hc.getItem(sourceGroupId).getItemProperty(PROCESSOR_NAME).setValue(MRUI.SOURCE_GROUP_NAME);
 
         // Populate Processor's Group
@@ -308,7 +308,6 @@ public class ModelTreeLayout extends VerticalLayout {
             }
             
             hc.setParent(id, procGroupId);
-
         }
         
         if(procs.isEmpty()){
@@ -355,7 +354,6 @@ public class ModelTreeLayout extends VerticalLayout {
             }
             
             hc.setParent(id, sinkGroupId);
-
         }
         
         hc.getItem(sinkGroupId).getItemProperty(PROCESSOR_NAME).setValue(MRUI.SINK_GROUP_NAME);
@@ -381,7 +379,6 @@ public class ModelTreeLayout extends VerticalLayout {
 
         button.setCaption("update");
         button.setImmediate(true);
-//        button.setStyleName("reindeer");
 
         button.addClickListener(new Button.ClickListener() {
             @Override
@@ -493,57 +490,5 @@ public class ModelTreeLayout extends VerticalLayout {
      */
     public void setButtonLayout(HorizontalLayout buttonLayout) {
         this.buttonLayout = buttonLayout;
-    }
-
-    // Run Button Click Listener
-    //==========================================================================
-    static class RunButtonListener implements Button.ClickListener {
-
-        @Override
-        public synchronized void buttonClick(Button.ClickEvent event) {
-
-            String json = VaadinSession.getCurrent().getAttribute(MRUI.MODEL_JSON) == null
-                    ? null : (String) VaadinSession.getCurrent().getAttribute(MRUI.MODEL_JSON);
-
-            if (json == null) {
-                Notification.show("Model JSON cannot be NULL.");
-                return;
-            }
-
-            ModelBean modelBean = new Gson().fromJson(json, ModelBean.class);
-            try {
-                String modelname = (String) VaadinSession.getCurrent().getAttribute(MRUI.MODEL_NAME_PARAM);
-                String modeljson = (String) VaadinSession.getCurrent().getAttribute(MRUI.JSON_NAME_PARAM);
-
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put(modelname, modelBean.getModelName());
-                jsonObject.put(modeljson, json);
-
-                HttpClient client = new DefaultHttpClient();
-                HttpPost httpPost = new HttpPost(MRUI.JETTY_RUN_URL);
-
-                httpPost.setHeader("id", modelBean.getModelName());
-                httpPost.setHeader("name", modelBean.getModelName());
-
-                httpPost.setHeader("Content-Type", "application/json");
-                StringEntity entity = new StringEntity(jsonObject.toString(), HTTP.UTF_8);
-                httpPost.setEntity(entity);
-
-                HttpResponse httpResponse = client.execute(httpPost);
-
-                System.out.println("HTTP response: " + httpResponse);
-
-                Notification.show("Model: " + modelBean.getModelName() + " - finished it's Run successfuly.");
-
-//                    modelTreeLayout.setVisible(true);
-
-            } catch (UnsupportedEncodingException ex) {
-                Exceptions.printStackTrace(ex);
-            } catch (IOException ex) {
-                Exceptions.printStackTrace(ex);
-            } catch (JSONException ex) {
-                Exceptions.printStackTrace(ex);
-            }
-        }
     }
 }
