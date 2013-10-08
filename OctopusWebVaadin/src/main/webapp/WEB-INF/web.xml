@@ -12,7 +12,7 @@
         <init-param>
             <description>Vaadin UI to display</description>
             <param-name>UI</param-name>
-            <param-value>org.lisapark.octopusweb.ModelRunnerUI</param-value>
+            <param-value>org.lisapark.octopusweb.MRUI</param-value>
         </init-param>
     </servlet>
     <servlet-mapping>
