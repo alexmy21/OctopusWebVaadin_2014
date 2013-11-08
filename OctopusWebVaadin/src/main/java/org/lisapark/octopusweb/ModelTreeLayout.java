@@ -197,12 +197,12 @@ public class ModelTreeLayout extends VerticalLayout {
                 Container.Hierarchical hc = getTreeTable().getContainerDataSource();
 
                 TextField field = new TextField((String) propertyId);
+                field.setSizeFull();
+                field.setWidth("100%");
 
                 // If you want to disable edition on a column, use ReadOnly
                 if (PARAM_VALUE.equals(propertyId) && !hc.hasChildren(itemId)) {
-                    field.setData(itemId);
-                    field.setSizeFull();
-                    field.setWidth("100%");
+                    field.setData(itemId);                    
                 } else {
                     field.setReadOnly(true);
                 }
