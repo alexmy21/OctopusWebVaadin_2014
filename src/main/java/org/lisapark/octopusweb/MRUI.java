@@ -27,8 +27,8 @@ public class MRUI extends UI {
     static String MODEL_JSON        = "MODEL_JSON";
     static final String MODEL_NAME  = "MODEL_NAME";
     
-    static String JETTY_SEARCH_URL  = "http://10.1.10.10:8084/search/search";
-    static String JETTY_RUN_URL     = "http://10.1.10.10:8084/run/run";
+    static String JETTY_SEARCH_URL  = "http://localhost:8084/search/search";
+    static String JETTY_RUN_URL     = "http://localhost:8084/run/run";
     
     static String MODEL_TREE_LAYOUT = "MODEL_TREE_LAYOUT";
     
